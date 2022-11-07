@@ -1,0 +1,73 @@
+name: Build App and DFU
+on: [push]
+
+jobs:
+  build:
+    name: "build"
+    runs-on: ubuntu-latest
+    env:
+      GNU_INSTALL_ROOT: "/usr/bin/"
+      GNU_VERSION: "9.2.1"
+      GNU_PREFIX: "arm-none-eabi"
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: sudo apt install curl wget build-essential libtool gcc-arm-none-eabi
+
+      - name: Show versions
+        run: |
+          arm-none-eabi-gcc --version
+
+      - name: Build micro-ecc
+        run: |
+          export TOP_DIR=$(pwd)
+          cd ble-firmware/external/micro-ecc/
+          make -C nrf52hf_armgcc/armgcc
+          cd $TOP_DIR
+
+      - name: Build dfu
+        run: |
+          export TOP_DIR=$(pwd)
+          cd dfu
+          make -j8
+          cd $TOP_DIR
+
+      - name: Build app
+        run: |
+          export TOP_DIR=$(pwd)
+          cd app
+          make -j4
+          cd $TOP_DIR
+
+      - name: Move and Zip Artifacts
+        run: |
+          mkdir artifacts
+          mv dfu/_build/nrf52832_xxaa_s132.bin artifacts/dfu.bin
+          mv dfu/_build/nrf52832_xxaa_s132.hex artifacts/dfu.hex
+          mv app/_build/nrf52832_xxaa.bin artifacts/app.bin
+          mv app/_build/nrf52832_xxaa.hex artifacts/app.hex
+          zip -rj artifacts.zip artifacts/*
+          
+      - name: "Upload Artifacts"
+        uses: actions/upload-artifact@v3
+        with:
+          name: onekey-bt-firmware-${{ github.sha }}
+          path: |
+            artifacts.zip
+
+      - name: 'Notify to Slack'
+        uses: onekeyhq/actions/notice-slack-app-update@main
+        with:
+          web-hook-url: ${{ secrets.SLACK_DEV_WEBHOOK }}
+          artifact-type: TOUCH-FIRMWARE-BT
+          artifact-name: Touch-Hardware-Firmware-BT
+          artifact-bundle-id: 'so.onekey.firmware.touch.bt'
+          artifact-version-name: '${{ steps.dotenv.outputs.version }}@${{ env.BUILD_NUMBER }}'
+          artifact-version-code: '${{ env.BUILD_NUMBER }}'
+          artifact-download-url: '${{ env.ARTIFACTS_URL }}'
+          change-log: 'Download [Artifacts] at the bottom of page.'
+          custom-issue-url: ''
+          custom-message-title: ''
+          custom-message-payload: ''
