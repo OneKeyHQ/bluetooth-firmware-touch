@@ -65,8 +65,6 @@ jobs:
           artifact-type: TOUCH-FIRMWARE-BT
           artifact-name: Touch-Hardware-Firmware-BT
           artifact-bundle-id: "so.onekey.firmware.touch.bt"
-          artifact-version-name: "${{ steps.dotenv.outputs.version }}@${{ env.BUILD_NUMBER }}"
-          artifact-version-code: "${{ env.BUILD_NUMBER }}"
           artifact-download-url: "${{ env.ARTIFACTS_URL }}"
           change-log: "Download [Artifacts] at the bottom of page."
           custom-issue-url: ""
