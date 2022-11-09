@@ -57,6 +57,11 @@ jobs:
           name: onekey-bt-firmware-${{ github.sha }}
           path: |
             artifacts.zip
+      
+      - name: "Set Env"
+        run: |
+          artifacts_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          echo "ARTIFACTS_URL=$artifacts_url" >> $GITHUB_ENV
 
       - name: Notify to Slack
         uses: onekeyhq/actions/notice-slack-app-update@main
@@ -70,3 +75,4 @@ jobs:
           custom-issue-url: ""
           custom-message-title: ""
           custom-message-payload: ""
+          filter-code: false
