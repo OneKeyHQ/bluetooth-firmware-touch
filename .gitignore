@@ -1,2 +1,5 @@
 _build
 *.bak
+*.a
+artifacts
+artifacts.zip

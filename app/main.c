@@ -110,7 +110,7 @@
 #define MANUFACTURER_ID                 0x55AA55AA55                                /**< DUMMY Manufacturer ID. Will be passed to Device Information Service. You shall use the ID for your Company*/
 #define ORG_UNIQUE_ID                   0xEEBBEE                                    /**< DUMMY Organisation Unique ID. Will be passed to Device Information Service. You shall use the Organisation Unique ID relevant for your Company */
 #define HW_REVISION                     "1.0.0"
-#define FW_REVISION                     "2.0.8"
+#define FW_REVISION                     "2.1.0"
 #define SW_REVISION                     "s132_nrf52_7.0.1"
 #define BT_REVISION                     "1.0.1"
 
@@ -174,7 +174,7 @@
 #define MIN_CONN_INTERVAL               MSEC_TO_UNITS(30, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (10 ms). */
 #define MAX_CONN_INTERVAL               MSEC_TO_UNITS(30, UNIT_1_25_MS)            /**< Maximum acceptable connection interval (100 ms) */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
-#define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds). */
+#define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(300, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds). */
 #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(100)                       /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
 #define NEXT_CONN_PARAMS_UPDATE_DELAY   APP_TIMER_TICKS(30000)                      /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
 #define ONE_SECOND_INTERVAL              APP_TIMER_TICKS(1000)
@@ -403,7 +403,7 @@ static bool ble_send_ready = false;
 //AXP216 global status
 static uint8_t g_charge_status = 0;
 static uint8_t g_bas_update_flag = 0;
-static uint8_t g_offlevel_flag = 0;
+//static uint8_t g_offlevel_flag = 0;
 static uint8_t g_key_status = 0;
 
 #ifdef SCHED_ENABLE
@@ -1850,7 +1850,7 @@ static void advertising_init(void)
     uint32_t               err_code;
     ble_advertising_init_t init;
     // ble_advdata_manuf_data_t   manuf_data;
-    uint8_t m_addl_adv_manuf_data[MAC_ADDRESS_LENGTH];
+    //uint8_t m_addl_adv_manuf_data[MAC_ADDRESS_LENGTH];
 
     memset(&init, 0, sizeof(init));
 
@@ -1933,7 +1933,7 @@ void forwarding_to_st_data(void)
     }
 }
 #endif
-static void ble_resp_data(void)
+static void ble_resp_data(void *p_event_data,uint16_t event_size)
 {
     ret_code_t err_code;
     uint16_t length = 0;
@@ -2329,10 +2329,7 @@ static void manage_bat_level(void *p_event_data,uint16_t event_size)
     }
 }
 static void check_advertising_stop(void)
-{
-    if(ble_status_flag == BLE_OFF_ALWAYS)
-        return;
-        
+{        
     if(ble_evt_flag != BLE_DISCONNECT || ble_evt_flag != BLE_DEFAULT)
     {
         sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
@@ -2430,7 +2427,10 @@ static void ble_ctl_process(void *p_event_data,uint16_t event_size)
         bak_buff[1] = BLE_CLOSE_SYSTEM;
         send_stm_data(bak_buff,2);
 #endif
-        check_advertising_stop();
+        if(ble_status_flag != BLE_OFF_ALWAYS)
+        {
+            check_advertising_stop();
+        }
         close_all_power();
         break;
     case PWR_CLOSE_EMMC:

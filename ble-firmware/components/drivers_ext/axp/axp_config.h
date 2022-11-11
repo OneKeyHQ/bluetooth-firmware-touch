@@ -45,7 +45,7 @@
 		AXP:300~2550,100/step
 */
 /*充电电流，uA*/
-#define STACHGCUR			750*1000
+#define STACHGCUR			500*1000
 
 
 /*目标充电电压，mV*/
@@ -136,7 +136,7 @@
 /*
 	AXP:4000~4700，100/step
 */
-#define USBVOLLIM			4200
+#define USBVOLLIM			4700
 /*  USB充电限压，mV，0为不限制*/
 /*
 	AXP:4000~4700，100/step
@@ -152,12 +152,12 @@
 /*
 	AXP:500/900
 */
-#define USBCURLIM			900
+#define USBCURLIM			0
 /* usb 充电限流，mA，0为不限制*/
 /*
 	AXP:500/900
 */
-#define USBCURLIMPC			900
+#define USBCURLIMPC			0
 /* PMU 中断触发唤醒使能*/
 /*
 	AXP:0-不唤醒，1-唤醒
