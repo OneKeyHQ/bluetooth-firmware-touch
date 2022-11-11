@@ -90,7 +90,7 @@ uint16_t data_recived_offset = 0;
 
 extern uint8_t spi_evt_flag;
 
-static void apdu_command(const uint8_t *p_buf,uint32_t data_len);
+void apdu_command(const uint8_t *p_buf,uint32_t data_len);
 bool apdu_cmd =false;
 
 //TWI driver
