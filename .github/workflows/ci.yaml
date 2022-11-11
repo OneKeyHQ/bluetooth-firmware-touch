@@ -15,11 +15,18 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Dependencies
-        run: sudo apt install curl wget build-essential libtool gcc-arm-none-eabi
-
-      - name: Show versions
         run: |
-          arm-none-eabi-gcc --version
+          sudo apt install curl wget build-essential libtool gcc-arm-none-eabi
+          # sudo apt install python3 python3-pip python-is-python3
+          # sudo pip install nrfutil
+
+      - name: Populate vars
+        id: vars
+        run: |
+          echo "build_date=$(date +"%Y%m%d")" >> $GITHUB_OUTPUT
+          echo "short_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "fw_revision=$(sed -n 's/^#define FW_REVISION\s*"\(.*\)"/\1/p' app/firmware_config.h)" >> $GITHUB_OUTPUT
+          echo "artifacts_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"" >> $GITHUB_OUTPUT
 
       - name: Build micro-ecc
         run: |
@@ -42,26 +49,21 @@ jobs:
           make -j4
           cd $TOP_DIR
 
-      - name: Move and Zip Artifacts
+      - name: Move and zip artifacts
         run: |
           mkdir artifacts
           mv dfu/_build/nrf52832_xxaa_s132.bin artifacts/dfu.bin
           mv dfu/_build/nrf52832_xxaa_s132.hex artifacts/dfu.hex
           mv app/_build/nrf52832_xxaa.bin artifacts/app.bin
           mv app/_build/nrf52832_xxaa.hex artifacts/app.hex
-          zip -rj artifacts.zip artifacts/*
+          # zip -rj artifacts.zip artifacts/*
 
-      - name: Upload Artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: onekey-bt-firmware-${{ github.sha }}
+          name: "${{ github.event.repository.name }}-${{ steps.vars.outputs.fw_revision }}-${{ steps.vars.outputs.build_date }}-${{ steps.vars.outputs.short_hash }}"
           path: |
-            artifacts.zip
-      
-      - name: "Set Env"
-        run: |
-          artifacts_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          echo "ARTIFACTS_URL=$artifacts_url" >> $GITHUB_ENV
+            artifacts/*
 
       - name: Notify to Slack
         uses: onekeyhq/actions/notice-slack-app-update@main
@@ -70,7 +72,9 @@ jobs:
           artifact-type: TOUCH-FIRMWARE-BT
           artifact-name: Touch-Hardware-Firmware-BT
           artifact-bundle-id: "so.onekey.firmware.touch.bt"
-          artifact-download-url: "${{ env.ARTIFACTS_URL }}"
+          artifact-version-name: "${{ steps.vars.outputs.fw_revision }}"
+          artifact-version-code: "${{ steps.vars.outputs.short_hash }}"
+          artifact-download-url: "${{ steps.vars.outputs.artifacts_url }}"
           change-log: "Download [Artifacts] at the bottom of page."
           custom-issue-url: ""
           custom-message-title: ""
