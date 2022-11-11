@@ -1,5 +1,6 @@
 _build
 *.bak
-*.a
 artifacts
 artifacts.zip
+.vscode
+micro_ecc*
