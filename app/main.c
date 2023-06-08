@@ -1208,7 +1208,7 @@ static void nus_data_handler(ble_nus_evt_t * p_evt)
                 }
                 else
                 {
-                    msg_len -= pad;
+                    msg_len -= data_recived_len-pad;
                 }
                 ble_evt_flag = BLE_RCV_DATA;
                 ble_trans_timer_flag = TIMER_RESET_FLAG;
