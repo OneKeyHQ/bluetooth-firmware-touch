@@ -1203,7 +1203,7 @@ static void nus_data_handler(ble_nus_evt_t * p_evt)
                 if(data_recived_len-pad > msg_len)
                 {
                     rcv_head_flag = DATA_INIT;
-                    data_recived_len = msg_len + (msg_len+63)/64;
+                    // data_recived_len = msg_len + (msg_len+62)/63;
                     msg_len = 0;
                 }
                 else
