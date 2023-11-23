@@ -27,7 +27,7 @@ unset BT_SIG_PK
 ##### FACTORY #####
 
 # gen hex
-$PATH_UTILS/nrfutil settings generate --family NRF52 --application $PATH_APP --application-version 3 --bootloader-version 2 --bl-settings-version 2 $PATH_BL_CONFIG
+$PATH_UTILS/nrfutil settings generate --family NRF52 --application $PATH_APP --application-version 3 --bootloader-version 2 --app-boot-validation VALIDATE_ECDSA_P256_SHA256 --key-file $PATH_KEY --bl-settings-version 2 $PATH_BL_CONFIG
 $PATH_UTILS/mergehex --merge $PATH_BOOTLOADER $PATH_BL_CONFIG $PATH_SD $PATH_APP --output $PATH_OUTPUT_FACTORY_HEX
 rm $PATH_BL_CONFIG
 
@@ -39,6 +39,6 @@ rm $PATH_OUTPUT_FACTORY_BIN.tmp
 ##### OTA #####
 
 # sign app
-$PATH_UTILS/nrfutil pkg generate --application $PATH_APP --application-version 3 --hw-version 52 --sd-req 0xCB --key-file $PATH_KEY $PATH_OUTPUT_ZIP
+$PATH_UTILS/nrfutil pkg generate --application $PATH_APP --application-version 3 --hw-version 52 --sd-req 0xCB --app-boot-validation VALIDATE_ECDSA_P256_SHA256 --key-file $PATH_KEY $PATH_OUTPUT_ZIP
 rm $PATH_KEY
 $PATH_UTILS/ota_to_onekey_bin.py $PATH_OUTPUT_ZIP $PATH_OUTPUT_OTA_BIN
