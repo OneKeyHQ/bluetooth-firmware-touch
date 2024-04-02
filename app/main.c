@@ -245,8 +245,6 @@
 #define BLE_PWR_PERCENT                0X04
 #define BLE_CMD_BUILD_ID               0x10
 #define BLE_CMD_HASH                   0x11
-
-
 //end BLE send CMD
 //
 #define UART_CMD_BLE_CON_STA           0x01

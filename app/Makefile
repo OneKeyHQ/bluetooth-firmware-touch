@@ -313,9 +313,7 @@ OPT = -O3 -g3
 # Uncomment the line below to enable link time optimization
 #OPT += -flto
 
-
 GIT_VERSION := $(shell git rev-parse HEAD)
-
 # C flags common to all targets
 CFLAGS += $(OPT)
 CFLAGS += -DAPP_TIMER_V2
