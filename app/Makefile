@@ -313,7 +313,7 @@ OPT = -O3 -g3
 # Uncomment the line below to enable link time optimization
 #OPT += -flto
 
-
+GIT_VERSION := $(shell git rev-parse HEAD)
 # C flags common to all targets
 CFLAGS += $(OPT)
 CFLAGS += -DAPP_TIMER_V2
@@ -344,6 +344,7 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums
+CFLAGS += -DBUILD_ID=\"$(GIT_VERSION)\"
 
 
 

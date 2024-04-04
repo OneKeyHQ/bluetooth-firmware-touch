@@ -96,6 +96,7 @@
 #include "power_manage.h"
 #include "rtc_calendar.h"
 #include "data_transmission.h"
+#include "nrf_crypto.h"
 
 #if defined (UART_PRESENT)
 #include "nrf_uart.h"
@@ -242,6 +243,8 @@
 #define BLE_CLOSE_EMMC                 0x02
 #define BLE_OPEN_EMMC                  0x03
 #define BLE_PWR_PERCENT                0X04
+#define BLE_CMD_BUILD_ID               0x10
+#define BLE_CMD_HASH                   0x11
 //end BLE send CMD
 //
 #define UART_CMD_BLE_CON_STA           0x01
@@ -260,6 +263,8 @@
 #define ST_SEND_CLOSE_BLE              0x02
 #define ST_SEND_DISCON_BLE             0x03
 #define ST_GET_BLE_SWITCH_STATUS       0x04
+#define ST_REQ_BUILD_ID                0x05
+#define ST_REQ_HASH                    0x06
 //
 #define ST_CMD_POWER                   0x82
 #define ST_SEND_CLOSE_SYS_PWR          0x01
@@ -309,6 +314,8 @@
 #define RESPONESE_VER_UART				0x04
 #define RESPONESE_SD_VER_UART           0x05
 #define RESPONESE_BOOT_VER_UART         0x06
+#define RESPONESE_BUILD_ID              0x0B
+#define RESPONESE_HASH                  0x0C
 #define DEF_RESP						0xFF
 
 #define BLE_CTL_ADDR					0x6f000
@@ -372,8 +379,8 @@ static void twi_write_data(void *p_event_data,uint16_t event_size);
 void forwarding_to_st_data(void);
 #ifdef UART_TRANS
 static volatile uint8_t flag_uart_trans=1;
-static uint8_t uart_trans_buff[30];
-static uint8_t bak_buff[18];
+static uint8_t uart_trans_buff[64];
+static uint8_t bak_buff[64];
 static void uart_put_data(uint8_t *pdata,uint8_t lenth);
 static void send_stm_data(uint8_t *pdata,uint8_t lenth);
 static uint8_t calcXor(uint8_t *buf, uint8_t len);
@@ -1768,6 +1775,12 @@ void uart_event_handle(app_uart_evt_t * p_event)
                             case ST_REQ_BOOTLOADER_VER:
                                 trans_info_flag = RESPONESE_BOOT_VER_UART;
                                 break;
+                            case ST_REQ_BUILD_ID:
+                                trans_info_flag = RESPONESE_BUILD_ID;
+                                break;
+                            case ST_REQ_HASH:
+                                trans_info_flag = RESPONESE_HASH;
+                                break;
                             default:
                                 trans_info_flag = UART_DEF;
                                 break;
@@ -2306,6 +2319,40 @@ static void rsp_st_uart_cmd(void *p_event_data,uint16_t event_size)
         memcpy(&bak_buff[1],BT_REVISION,sizeof(BT_REVISION)-1);
         send_stm_data(bak_buff,sizeof(BT_REVISION));
 		trans_info_flag = DEF_RESP;
+    }else if(trans_info_flag == RESPONESE_BUILD_ID)
+	{
+        bak_buff[0] = BLE_CMD_BUILD_ID;
+        memcpy(&bak_buff[1], (uint8_t *)BUILD_ID, 8);
+        send_stm_data(bak_buff,8);
+		trans_info_flag = DEF_RESP;
+    }else if(trans_info_flag == RESPONESE_HASH)
+	{
+        ret_code_t  err_code = NRF_SUCCESS;
+        nrf_crypto_backend_hash_context_t hash_context = {0};
+        uint8_t hash[32]={0};
+        size_t hash_len = 32;
+        int chunks = 0;
+        int app_size = 0;
+        uint8_t *code_addr = (uint8_t *)0x26000;
+        uint8_t *code_len = (uint8_t *)0x7F018;
+        app_size = code_len[0] + code_len[1]*256 + code_len[2]*256*256;
+        chunks = app_size/512;
+        err_code = nrf_crypto_hash_init(&hash_context, &g_nrf_crypto_hash_sha256_info);
+        APP_ERROR_CHECK(err_code);
+        for(int i = 0; i<chunks; i++) {
+            err_code = nrf_crypto_hash_update(&hash_context, code_addr + i*512, 512);
+            APP_ERROR_CHECK(err_code);
+        }
+        if(app_size%512) {
+            err_code = nrf_crypto_hash_update(&hash_context, code_addr + chunks*512, app_size%512);
+            APP_ERROR_CHECK(err_code);
+        }
+        err_code = nrf_crypto_hash_finalize(&hash_context, hash, &hash_len);
+        APP_ERROR_CHECK(err_code);
+        bak_buff[0] = BLE_CMD_HASH;
+        memcpy(&bak_buff[1], hash, 32);
+        send_stm_data(bak_buff,33);
+        trans_info_flag = DEF_RESP;
     }
 }
 static void manage_bat_level(void *p_event_data,uint16_t event_size)
