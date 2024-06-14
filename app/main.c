@@ -572,8 +572,7 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
             //}
             break;
         case NRF_PWR_MGMT_EVT_PREPARE_WAKEUP:
-            sense =  NRF_GPIO_PIN_SENSE_HIGH;
-            nrf_gpio_cfg_sense_set(POWER_IC_OK_IO,sense);
+            nrf_gpio_cfg_sense_input(POWER_IC_OK_IO, NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_SENSE_HIGH);
         break;
 
         default:
@@ -628,34 +627,14 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }                                             /**< Structure used to identify the battery service. */
 
-// static void gpio_uninit(void)
-// {
-//     nrf_drv_gpiote_uninit();
-// }
+static void gpio_uninit(void)
+{
+    nrf_drv_gpiote_uninit();
+}
 
 static void enter_low_power_mode(void)
 {
-//    nrf_delay_ms(3000);
-
-//    advertising_stop();
-
-//    nfc_disable();
-
-//    app_timer_stop(m_battery_timer_id);
-//    app_timer_stop(m_100ms_timer_id);
-//    app_timer_stop(m_1s_timer_id);
-
-//    app_uart_close();
-//    axp_disable();
-//    usr_spi_disable();
-//    usr_rtc_tick_disable();
-//    gpio_uninit();
-
-//    for(;;){
-//        
-//        // sd_power_system_off(); //stop mode rtc stoped
-//        nrf_pwr_mgmt_run();
-//    }
+    gpio_uninit();
     app_uart_close();
     nrf_pwr_mgmt_shutdown(NRF_PWR_MGMT_SHUTDOWN_GOTO_SYSOFF);
 }
@@ -681,9 +660,6 @@ void battery_level_meas_timeout_handler(void *p_context)
             }
         }
     }
-
-    
-    
 }
 
 static volatile uint8_t timeout_count=0;
@@ -2083,26 +2059,21 @@ void in_gpiote_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 static void gpiote_init(void)
 {
     ret_code_t err_code;
-
     err_code = nrf_drv_gpiote_init();
     APP_ERROR_CHECK(err_code);
-
-    //nrf_drv_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_TOGGLE(false);
-    //in_config.pull = NRF_GPIO_PIN_PULLUP;
-
-    nrf_drv_gpiote_in_config_t in_config1 = NRFX_GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
-    in_config1.pull = NRF_GPIO_PIN_PULLUP;
-    err_code = nrf_drv_gpiote_in_init(SLAVE_SPI_RSP_IO, &in_config1, in_gpiote_handler);
+    nrf_drv_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_HITOLO(false);
+    in_config.pull = NRF_GPIO_PIN_PULLUP;
+    err_code = nrf_drv_gpiote_in_init(SLAVE_SPI_RSP_IO, &in_config, in_gpiote_handler);
     APP_ERROR_CHECK(err_code);
     nrf_drv_gpiote_in_event_enable(SLAVE_SPI_RSP_IO, true);
-    
-    err_code = nrf_drv_gpiote_in_init(POWER_IC_OK_IO, &in_config1, in_gpiote_handler);
-    APP_ERROR_CHECK(err_code);
-    nrf_drv_gpiote_in_event_enable(POWER_IC_OK_IO, true);
-    
-    err_code = nrf_drv_gpiote_in_init(POWER_IC_IRQ_IO, &in_config1, in_gpiote_handler);
+    err_code = nrf_drv_gpiote_in_init(POWER_IC_IRQ_IO, &in_config, in_gpiote_handler);
     APP_ERROR_CHECK(err_code);        
     nrf_drv_gpiote_in_event_enable(POWER_IC_IRQ_IO, true);
+    nrf_drv_gpiote_in_config_t in_config_powok = NRFX_GPIOTE_CONFIG_IN_SENSE_HITOLO(true);
+    in_config_powok.pull = NRF_GPIO_PIN_NOPULL;
+    err_code = nrf_drv_gpiote_in_init(POWER_IC_OK_IO, &in_config_powok, in_gpiote_handler);
+    APP_ERROR_CHECK(err_code);
+    nrf_drv_gpiote_in_event_enable(POWER_IC_OK_IO, true);
 }
 
 static void gpio_init(void)
