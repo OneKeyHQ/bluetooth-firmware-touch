@@ -634,11 +634,10 @@ static void gpio_uninit(void)
 
 static void enter_low_power_mode(void)
 {
-      gpio_uninit();
-      app_uart_close();
-      nrf_pwr_mgmt_shutdown(NRF_PWR_MGMT_SHUTDOWN_GOTO_SYSOFF);
+    gpio_uninit();
+    app_uart_close();
+    nrf_pwr_mgmt_shutdown(NRF_PWR_MGMT_SHUTDOWN_GOTO_SYSOFF);
 }
-
 void battery_level_meas_timeout_handler(void *p_context)
 {
     ret_code_t err_code;
@@ -660,7 +659,7 @@ void battery_level_meas_timeout_handler(void *p_context)
                 APP_ERROR_HANDLER(err_code);
             }
         }
-    }   
+    }
 }
 
 static volatile uint8_t timeout_count=0;
