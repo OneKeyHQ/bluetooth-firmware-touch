@@ -664,9 +664,21 @@ void battery_level_meas_timeout_handler(void *p_context)
 
 static volatile uint8_t timeout_count=0;
 static volatile uint16_t timeout_longcnt=0;
+static int pwrok_check_count = 0;
 
 void m_100ms_timeout_hander(void * p_context)
 {
+    if (nrf_gpio_pin_read(POWER_IC_OK_IO) == 0) {
+        pwrok_check_count++;
+        if (pwrok_check_count >= 2) {
+            pwrok_check_count = 0;
+            enter_low_power_mode();
+        }
+    } else {
+        pwrok_check_count = 0; 
+    }
+
+
     UNUSED_PARAMETER(p_context);
 
     nrf_drv_wdt_channel_feed(m_channel_id);
