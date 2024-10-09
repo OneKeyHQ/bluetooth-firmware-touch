@@ -1405,7 +1405,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             break;
     }
 }
-static int g_ble_connection_state = 2; 
+static int g_ble_connection_state = BLE_DISCONNECT; 
 /**@brief Function for handling BLE events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -1422,8 +1422,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     {
         case BLE_GAP_EVT_DISCONNECTED:
         {
-            g_ble_connection_state = 2;
-            NRF_LOG_INFO("Disconnected");
+            g_ble_connection_state = BLE_DISCONNECT;
             ble_evt_flag = BLE_DISCONNECT;
             bond_check_key_flag = INIT_VALUE;
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
@@ -1444,8 +1443,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
         case BLE_GAP_EVT_CONNECTED:
         {
-            g_ble_connection_state = 1;
-            NRF_LOG_INFO("Connected");
+            g_ble_connection_state = BLE_CONNECT;
             ble_evt_flag = BLE_CONNECT;
 #ifdef UART_TRANS
             bak_buff[0] = BLE_CMD_CON_STA;
