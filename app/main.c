@@ -129,6 +129,7 @@
 #define BLE_DISCON                      3   
 #define BLE_CON                         4
 #define BLE_PAIR                        5
+#define BLE_GET_CON_STATUS              7
 
 #define PWR_DEF                         0
 #define PWR_SHUTDOWN_SYS                1
@@ -265,6 +266,7 @@
 #define ST_GET_BLE_SWITCH_STATUS       0x04
 #define ST_REQ_BUILD_ID                0x05
 #define ST_REQ_HASH                    0x06
+#define ST_GET_BLE_CON_STATUS          0x07
 //
 #define ST_CMD_POWER                   0x82
 #define ST_SEND_CLOSE_SYS_PWR          0x01
@@ -1403,7 +1405,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             break;
     }
 }
-
+static int g_ble_connection_state = BLE_DISCONNECT; 
 /**@brief Function for handling BLE events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -1420,7 +1422,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     {
         case BLE_GAP_EVT_DISCONNECTED:
         {
-            NRF_LOG_INFO("Disconnected");
+            g_ble_connection_state = BLE_DISCONNECT;
             ble_evt_flag = BLE_DISCONNECT;
             bond_check_key_flag = INIT_VALUE;
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
@@ -1441,7 +1443,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
         case BLE_GAP_EVT_CONNECTED:
         {
-            NRF_LOG_INFO("Connected");
+            g_ble_connection_state = BLE_CONNECT;
             ble_evt_flag = BLE_CONNECT;
 #ifdef UART_TRANS
             bak_buff[0] = BLE_CMD_CON_STA;
@@ -1720,6 +1722,9 @@ void uart_event_handle(app_uart_evt_t * p_event)
                                 break;
                             case ST_GET_BLE_SWITCH_STATUS:
                                 ble_conn_flag = BLE_CON;
+                                break;
+                            case ST_GET_BLE_CON_STATUS:
+                                ble_conn_flag = BLE_GET_CON_STATUS;
                                 break;
                             default:
                                 break;
@@ -2429,6 +2434,15 @@ static void ble_ctl_process(void *p_event_data,uint16_t event_size)
 #ifdef UART_TRANS
         bak_buff[0] = BLE_CMD_CON_STA;
         bak_buff[1] = BLE_DISCON_STATUS;
+        send_stm_data(bak_buff,2);
+#endif
+    }
+    if(BLE_GET_CON_STATUS == ble_conn_flag)
+    {
+        ble_conn_flag = BLE_DEF;
+#ifdef UART_TRANS
+        bak_buff[0] = BLE_CMD_CON_STA;
+        bak_buff[1] = g_ble_connection_state;
         send_stm_data(bak_buff,2);
 #endif
     }
